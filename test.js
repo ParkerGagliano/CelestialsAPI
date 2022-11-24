@@ -6,6 +6,7 @@
 let db = require("./database.js")
 let express = require('express');
 let app = module.exports = express();
+const cors = require('cors');
 let bodyParser = require("body-parser");
 const fileUpload = require('express-fileupload');
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -43,7 +44,7 @@ app.use('/api', function(req, res, next){
   req.key = key;
   next();
 });
-
+app.use(cors());
 app.use(
   fileUpload({
       limits: {
@@ -52,7 +53,7 @@ app.use(
       abortOnLimit: true,
   })
 );
-app.use(express.static('public'));
+
 app.get('/', (req, res) => {
   res.send('Hello World!');
 });
@@ -60,43 +61,43 @@ app.get('/', (req, res) => {
 
 app.post('/api/upload-avatar/', async (req, res) => {
   try {
-      if(!req.files) {
-          res.send({
-              status: false,
-              message: 'No file uploaded'
-          });
-      } else {
-          //Use the name of the input field (i.e. "avatar") to retrieve the uploaded file
-          let avatar = req.files.avatar;
-          
-          //Use the mv() method to place the file in the upload directory (i.e. "uploads")
-          avatar.mv('./uploads/' + avatar.name);
+    if(!req.files) {
+        res.send({
+            status: false,
+            message: 'No file uploaded'
+        });
+    } else {
+        //Use the name of the input field (i.e. "avatar") to retrieve the uploaded file
+        let avatar = req.files.avatar;
+        
+        //Use the mv() method to place the file in the upload directory (i.e. "uploads")
+        avatar.mv('./uploads/' + avatar.name);
 
-          //send response
-          res.send({
-              status: true,
-              message: 'File is uploaded',
-              data: {
-                  name: avatar.name,
-                  mimetype: avatar.mimetype,
-                  size: avatar.size
-              }
-          });
-      }
-  } catch (err) {
-      res.status(500).send(err);
-  }
+        //send response
+        res.send({
+            status: true,
+            message: 'File is uploaded',
+            data: {
+                name: avatar.name,
+                mimetype: avatar.mimetype,
+                size: avatar.size
+            }
+        });
+    }
+} catch (err) {
+    res.status(500).send(err);
+}
 });
 
 app.post('/api/upload/', (req, res) => {
-  console.log(req)
+  console.log(req.files.joe)
     let errors=[]
-    if (!req.body.profilephoto){
+    if (!req.files.joe){
         errors.push("No photo");
     }
    
     let data = {
-      profilephoto: req.body.profilephoto,
+      profilephoto: req.files.joe
     }
 
     let sql ='INSERT INTO photos (profilephoto) VALUES (?)'
@@ -113,6 +114,7 @@ app.post('/api/upload/', (req, res) => {
         })
     });
 });
+
 // map of valid api keys, typically mapped to
 // account info with some sort of database like redis.
 // api keys do _not_ serve as authentication, merely to
@@ -274,7 +276,7 @@ app.post("/api/wowplayers/", (req, res, next) => {
 
 
 
-
+app.use(express.static('uploads'));
 
 
 
