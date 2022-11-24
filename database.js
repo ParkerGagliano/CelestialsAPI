@@ -17,7 +17,8 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
             twitter text,
             youtube text,
             twitch text,
-            tiktok text
+            tiktok text,
+            profilephoto blob
 
             )`,
 
@@ -30,6 +31,18 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
                 let insert = 'INSERT INTO wowplayers (name, tagline, twitter, youtube, twitch, tiktok) VALUES (?,?,?,?,?,?)'
                 db.run(insert, ["KYLE","Guild Leader","kyle", "kyle", "kyle", "kyle"])
             }
+        }); 
+        db.run(`CREATE TABLE photos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            profilephoto blob
+
+            )`,
+
+        (err) => {
+            if (err) {
+                // Table already created
+            }
+            
         });  
     }
 });

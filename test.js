@@ -7,6 +7,7 @@ let db = require("./database.js")
 let express = require('express');
 let app = module.exports = express();
 let bodyParser = require("body-parser");
+const fileUpload = require('express-fileupload');
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 // create an error with .status. we
@@ -29,6 +30,7 @@ function error(status, msg) {
 // will cause this middleware to be invoked
 
 app.use('/api', function(req, res, next){
+
   let key = req.query['api-key'];
 
   // key isn't present
@@ -42,6 +44,75 @@ app.use('/api', function(req, res, next){
   next();
 });
 
+app.use(
+  fileUpload({
+      limits: {
+          fileSize: 10000000, // Around 10MB
+      },
+      abortOnLimit: true,
+  })
+);
+app.use(express.static('public'));
+app.get('/', (req, res) => {
+  res.send('Hello World!');
+});
+
+
+app.post('/api/upload-avatar/', async (req, res) => {
+  try {
+      if(!req.files) {
+          res.send({
+              status: false,
+              message: 'No file uploaded'
+          });
+      } else {
+          //Use the name of the input field (i.e. "avatar") to retrieve the uploaded file
+          let avatar = req.files.avatar;
+          
+          //Use the mv() method to place the file in the upload directory (i.e. "uploads")
+          avatar.mv('./uploads/' + avatar.name);
+
+          //send response
+          res.send({
+              status: true,
+              message: 'File is uploaded',
+              data: {
+                  name: avatar.name,
+                  mimetype: avatar.mimetype,
+                  size: avatar.size
+              }
+          });
+      }
+  } catch (err) {
+      res.status(500).send(err);
+  }
+});
+
+app.post('/api/upload/', (req, res) => {
+  console.log(req)
+    let errors=[]
+    if (!req.body.profilephoto){
+        errors.push("No photo");
+    }
+   
+    let data = {
+      profilephoto: req.body.profilephoto,
+    }
+
+    let sql ='INSERT INTO photos (profilephoto) VALUES (?)'
+    let params =[data.profilephoto]
+    db.run(sql, params, function (err, result) {
+        if (err){
+            res.status(400).json({"error": err.message})
+            return;
+        }
+        res.json({
+            "message": "success",
+            "data": data,
+            "id" : this.lastID
+        })
+    });
+});
 // map of valid api keys, typically mapped to
 // account info with some sort of database like redis.
 // api keys do _not_ serve as authentication, merely to
@@ -70,6 +141,21 @@ app.delete("/api/wowplayers/", (req, res, next) => {
 })
 
 
+app.get("/api/getphotos", (req, res, next) => {
+  let sql = "select * from photos"
+  let params = []
+  console.log('test')
+  db.all(sql, params, (err, rows) => {
+      if (err) {
+        res.status(400).json({"error":err.message});
+        return;
+      }
+      res.json({
+          "message":"success",
+          "data":rows
+      })
+    });
+});
 
 
 
@@ -162,9 +248,11 @@ app.post("/api/wowplayers/", (req, res, next) => {
       twitter : req.body.twitter,
       youtube : req.body.youtube,
       twitch : req.body.twitch,
-      tiktok : req.body.tiktok
+      tiktok : req.body.tiktok,
+
 
     }
+
     let sql ='INSERT INTO wowplayers (name, tagline, twitter,youtube,twitch,tiktok) VALUES (?,?,?,?,?,?)'
     let params =[data.name, data.tagline, data.twitter,data.youtube,data.twitch,data.tiktok]
     db.run(sql, params, function (err, result) {
