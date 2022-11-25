@@ -1,8 +1,5 @@
 'use strict'
 
-/**
- * Module dependencies.
- */
 let db = require("./database.js")
 let express = require('express');
 let app = module.exports = express();
@@ -11,9 +8,6 @@ let bodyParser = require("body-parser");
 const fileUpload = require('express-fileupload');
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
-// create an error with .status. we
-// can then use the property in our
-// custom error handler (Connect respects this prop as well)
 
 function error(status, msg) {
   let err = new Error(msg);
@@ -21,26 +15,14 @@ function error(status, msg) {
   return err;
 }
 
-// if we wanted to supply more than JSON, we could
-// use something similar to the content-negotiation
-// example.
-
-// here we validate the API key,
-// by mounting this middleware to /api
-// meaning only paths prefixed with "/api"
-// will cause this middleware to be invoked
-
 app.use('/api', function(req, res, next){
 
   let key = req.query['api-key'];
 
-  // key isn't present
   if (!key) return next(error(400, 'api key required'));
 
-  // key is invalid
   if (apiKeys.indexOf(key) === -1) return next(error(401, 'invalid api key'))
 
-  // all good, store req.key for route access
   req.key = key;
   next();
 });
@@ -115,16 +97,8 @@ app.post('/api/upload/', (req, res) => {
     });
 });
 
-// map of valid api keys, typically mapped to
-// account info with some sort of database like redis.
-// api keys do _not_ serve as authentication, merely to
-// track API usage or help prevent malicious behavior etc.
 
-let apiKeys = ['foo', 'bar', 'baz'];
-
-// these two objects will serve as our faux database
-// we now can assume the api key is valid,
-// and simply expose the data
+let apiKeys = ['7U8nmLES48','chANJ066ir'];
 
 
 app.delete("/api/wowplayers/", (req, res, next) => {
@@ -160,8 +134,6 @@ app.get("/api/getphotos", (req, res, next) => {
 });
 
 
-
-// example: http://localhost:3000/api/users/?api-key=foo
 app.get("/api/wowplayers", (req, res, next) => {
     let sql = "select * from wowplayers"
     let params = []
@@ -178,20 +150,9 @@ app.get("/api/wowplayers", (req, res, next) => {
       });
 });
 
-app.get("/api/user/:id", (req, res, next) => {
-    let sql = "select * from wowplayers where id = ?"
-    let params = [req.params.id]
-    db.get(sql, params, (err, row) => {
-        if (err) {
-          res.status(400).json({"error":err.message});
-          return;
-        }
-        res.json({
-            "message":"success",
-            "data":row
-        })
-      });
-});
+//controller does validation, routing, and error handling
+//controller shoudlnt run sql queries
+//look at migrations (DB)
 
 app.patch("/api/user/:id", (req, res, next) => {
   console.log('joe')
@@ -280,29 +241,19 @@ app.use(express.static('uploads'));
 
 
 
-// middleware with an arity of 4 are considered
-// error handling middleware. When you next(err)
-// it will be passed through the defined middleware
-// in order, but ONLY those with an arity of 4, ignoring
-// regular middleware.
 app.use(function(err, req, res, next){
-  // whatever you want here, feel free to populate
-  // properties on `err` to treat it differently in here.
   res.status(err.status || 500);
   res.send({ error: err.message });
 });
 
-// our custom JSON 404 middleware. Since it's placed last
-// it will be the last middleware called, if all others
-// invoke next() and do not respond.
 app.use(function(req, res){
   res.status(404);
   res.send({ error: "Sorry, can't find that" })
 });
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 80;
 
 if (!module.parent) {
   app.listen(port);
-  console.log('Express started on port 3000');
+  console.log('Express started on port 80');
 }

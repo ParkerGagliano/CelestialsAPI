@@ -1,6 +1,9 @@
 var sqlite3 = require('sqlite3').verbose()
 var md5 = require('md5')
 
+//migration makes the table, etc
+// knex library - query builder half raw sql half orm 
+
 const DBSOURCE = "db.sqlite"
 
 let db = new sqlite3.Database(DBSOURCE, (err) => {
@@ -49,3 +52,17 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
 
 
 module.exports = db
+
+
+// look into docker compose 
+// -d to run in background
+// -p to specify port
+
+// can have entre architecture in one file
+
+//layered architecture ** look into this
+// different layers 1. DB data access, 2. service, 3. view
+
+// top down
+
+// controller
