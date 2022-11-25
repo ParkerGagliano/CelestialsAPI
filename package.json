@@ -6,5 +6,9 @@
     "fileupload": "^1.0.0",
     "md5": "^2.3.0",
     "sqlite3": "^5.1.2"
+  },
+  "scripts": {
+    "start": "node test.js"
   }
 }
+

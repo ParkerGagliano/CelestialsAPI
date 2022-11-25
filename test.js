@@ -300,7 +300,9 @@ app.use(function(req, res){
   res.send({ error: "Sorry, can't find that" })
 });
 
+const port = process.env.PORT || 3000;
+
 if (!module.parent) {
-  app.listen(3000);
+  app.listen(port);
   console.log('Express started on port 3000');
 }
