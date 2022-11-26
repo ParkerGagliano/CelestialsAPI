@@ -98,7 +98,7 @@ app.post('/api/upload/', (req, res) => {
 });
 
 
-let apiKeys = ['7U8nmLES48','chANJ066ir'];
+let apiKeys = ['foo','bar'];
 
 
 app.delete("/api/wowplayers/", (req, res, next) => {
@@ -154,7 +154,7 @@ app.get("/api/wowplayers", (req, res, next) => {
 //controller shoudlnt run sql queries
 //look at migrations (DB)
 
-app.patch("/api/user/:id", (req, res, next) => {
+app.patch("/api/wowplayers", (req, res, next) => {
   console.log('joe')
   console.log(req.body.name)
   let data = {
