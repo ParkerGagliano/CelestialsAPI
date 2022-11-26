@@ -16,21 +16,22 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name text UNIQUE, 
             tagline text,
+            rank integer,
             twitter text,
             youtube text,
             twitch text,
-            tiktok text,
-            profilephoto blob
+            tiktok text
             )`,
 
         (err) => {
             if (err) {
+                console.log(err)
                 // Table already created
             }else{
-                console.log('added jaunt')
+                console.log('added kyle')
                 // Table just created, creating some rows
-                let insert = 'INSERT INTO wowplayers (name, tagline, twitter, youtube, twitch, tiktok) VALUES (?,?,?,?,?,?)'
-                db.run(insert, ["KYLE","Guild Leader","kyle", "kyle", "kyle", "kyle"])
+                let insert = 'INSERT INTO wowplayers (name, tagline, rank, twitter, youtube, twitch, tiktok) VALUES (?,?,?,?,?,?,?)'
+                db.run(insert, ["Kyle","Guild Leader","0","_kylelandon", "kyle", "landonkyle", "kyle"])
             }
         }); 
     }

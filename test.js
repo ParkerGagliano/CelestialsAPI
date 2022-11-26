@@ -8,6 +8,7 @@ let bodyParser = require("body-parser");
 const fileUpload = require('express-fileupload');
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
+let apiKeys = ['tochangeonaws'];
 
 function error(status, msg) {
   let err = new Error(msg);
@@ -64,8 +65,6 @@ app.post('/api/upload-avatar/', async (req, res) => {
 }
 });
 
-let apiKeys = ['foo','bar'];
-
 
 app.delete("/api/wowplayers/", async (req, res, next) => {
   console.log(req.body.name)
@@ -82,10 +81,8 @@ app.delete("/api/wowplayers/", async (req, res, next) => {
   });
 })
 
-
-
 app.get("/wowplayers",async (req, res, next) => {
-    let sql = "select * from wowplayers"
+    let sql = "select * from wowplayers order by rank,name"
     let params = []
     console.log('test')
     db.all(sql, params, (err, rows) => {
@@ -110,6 +107,7 @@ app.patch("/api/wowplayers", async (req, res, next) => {
   let data = {
       name: req.body.name,
       tagline: req.body.tagline,
+      rank: req.body.rank,
       twitter : req.body.twitter,
       youtube : req.body.youtube,
       twitch : req.body.twitch,
@@ -118,17 +116,18 @@ app.patch("/api/wowplayers", async (req, res, next) => {
   }
   db.run(
       `UPDATE wowplayers set 
-         name = COALESCE(?,name), 
-         tagline = COALESCE(?,tagline), 
+         tagline = COALESCE(?,tagline),
+         rank = COALESCE(?,rank), 
          twitter = COALESCE(?,twitter), 
          youtube = COALESCE(?,youtube), 
          twitch = COALESCE(?,twitch), 
          tiktok = COALESCE(?,tiktok) 
-         WHERE id = ?`,
-      [data.name, data.tagline, data.twitter, data.youtube, data.twitch, data.tiktok, req.params.id],
+         WHERE name = ?`,
+      [data.tagline,data.rank, data.twitter, data.youtube, data.twitch, data.tiktok, data.name],
       function (err, result) {
         console.log(err)
           if (err){
+            console.log(err)
               res.status(400).json({"error": err.message})
               return;
           }
@@ -139,8 +138,6 @@ app.patch("/api/wowplayers", async (req, res, next) => {
           })
   });
 })
-
-
 
 app.post("/api/wowplayers/", async (req, res, next) => {
     console.log('test')
@@ -155,9 +152,11 @@ app.post("/api/wowplayers/", async (req, res, next) => {
         res.status(400).json({"error":errors.join(",")});
         return;
     }
+
     let data = {
       name: req.body.name,
       tagline: req.body.tagline,
+      rank : req.body.rank,
       twitter : req.body.twitter,
       youtube : req.body.youtube,
       twitch : req.body.twitch,
@@ -165,9 +164,8 @@ app.post("/api/wowplayers/", async (req, res, next) => {
 
 
     }
-
-    let sql ='INSERT INTO wowplayers (name, tagline, twitter,youtube,twitch,tiktok) VALUES (?,?,?,?,?,?)'
-    let params =[data.name, data.tagline, data.twitter,data.youtube,data.twitch,data.tiktok]
+    let sql ='INSERT INTO wowplayers (name, tagline,rank, twitter,youtube,twitch,tiktok) VALUES (?,?,?,?,?,?,?)'
+    let params =[data.name, data.tagline,data.rank, data.twitter,data.youtube,data.twitch,data.tiktok]
     db.run(sql, params, function (err, result) {
         if (err){
             res.status(400).json({"error": err.message})
@@ -182,14 +180,7 @@ app.post("/api/wowplayers/", async (req, res, next) => {
     });
 })
 
-
-
-
-
-
 app.use(express.static('uploads'));
-
-
 
 app.use(function(err, req, res, next){
   res.status(err.status || 500);
