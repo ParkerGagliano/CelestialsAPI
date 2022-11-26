@@ -1,5 +1,4 @@
 var sqlite3 = require('sqlite3').verbose()
-var md5 = require('md5')
 
 //migration makes the table, etc
 // knex library - query builder half raw sql half orm 
@@ -22,7 +21,6 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
             twitch text,
             tiktok text,
             profilephoto blob
-
             )`,
 
         (err) => {
@@ -35,18 +33,6 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
                 db.run(insert, ["KYLE","Guild Leader","kyle", "kyle", "kyle", "kyle"])
             }
         }); 
-        db.run(`CREATE TABLE photos (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            profilephoto blob
-
-            )`,
-
-        (err) => {
-            if (err) {
-                // Table already created
-            }
-            
-        });  
     }
 });
 

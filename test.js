@@ -16,13 +16,9 @@ function error(status, msg) {
 }
 
 app.use('/api', function(req, res, next){
-
   let key = req.query['api-key'];
-
   if (!key) return next(error(400, 'api key required'));
-
   if (apiKeys.indexOf(key) === -1) return next(error(401, 'invalid api key'))
-
   req.key = key;
   next();
 });
@@ -35,7 +31,6 @@ app.use(
       abortOnLimit: true,
   })
 );
-
 app.get('/', (req, res) => {
   res.send('Hello World!');
 });
@@ -51,10 +46,8 @@ app.post('/api/upload-avatar/', async (req, res) => {
     } else {
         //Use the name of the input field (i.e. "avatar") to retrieve the uploaded file
         let avatar = req.files.avatar;
-        
         //Use the mv() method to place the file in the upload directory (i.e. "uploads")
         avatar.mv('./uploads/' + avatar.name);
-
         //send response
         res.send({
             status: true,
@@ -71,37 +64,10 @@ app.post('/api/upload-avatar/', async (req, res) => {
 }
 });
 
-app.post('/api/upload/', (req, res) => {
-  console.log(req.files.joe)
-    let errors=[]
-    if (!req.files.joe){
-        errors.push("No photo");
-    }
-   
-    let data = {
-      profilephoto: req.files.joe
-    }
-
-    let sql ='INSERT INTO photos (profilephoto) VALUES (?)'
-    let params =[data.profilephoto]
-    db.run(sql, params, function (err, result) {
-        if (err){
-            res.status(400).json({"error": err.message})
-            return;
-        }
-        res.json({
-            "message": "success",
-            "data": data,
-            "id" : this.lastID
-        })
-    });
-});
-
-
 let apiKeys = ['foo','bar'];
 
 
-app.delete("/api/wowplayers/", (req, res, next) => {
+app.delete("/api/wowplayers/", async (req, res, next) => {
   console.log(req.body.name)
   db.run(
       'DELETE FROM wowplayers WHERE name = ?',
@@ -117,24 +83,8 @@ app.delete("/api/wowplayers/", (req, res, next) => {
 })
 
 
-app.get("/api/getphotos", (req, res, next) => {
-  let sql = "select * from photos"
-  let params = []
-  console.log('test')
-  db.all(sql, params, (err, rows) => {
-      if (err) {
-        res.status(400).json({"error":err.message});
-        return;
-      }
-      res.json({
-          "message":"success",
-          "data":rows
-      })
-    });
-});
 
-
-app.get("/api/wowplayers", (req, res, next) => {
+app.get("/wowplayers",async (req, res, next) => {
     let sql = "select * from wowplayers"
     let params = []
     console.log('test')
@@ -154,7 +104,7 @@ app.get("/api/wowplayers", (req, res, next) => {
 //controller shoudlnt run sql queries
 //look at migrations (DB)
 
-app.patch("/api/wowplayers", (req, res, next) => {
+app.patch("/api/wowplayers", async (req, res, next) => {
   console.log('joe')
   console.log(req.body.name)
   let data = {
@@ -192,7 +142,7 @@ app.patch("/api/wowplayers", (req, res, next) => {
 
 
 
-app.post("/api/wowplayers/", (req, res, next) => {
+app.post("/api/wowplayers/", async (req, res, next) => {
     console.log('test')
     let errors=[]
     if (!req.body.name){
