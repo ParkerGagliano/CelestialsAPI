@@ -4,6 +4,7 @@
     "express": "^4.18.2",
     "express-fileupload": "^1.4.0",
     "fileupload": "^1.0.0",
+    "https": "^1.0.0",
     "md5": "^2.3.0",
     "sqlite3": "^5.1.2"
   },
@@ -11,4 +12,3 @@
     "start": "node test.js"
   }
 }
-

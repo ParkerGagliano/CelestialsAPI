@@ -1,13 +1,21 @@
 'use strict'
-
 let db = require("./database.js")
 let express = require('express');
 let app = module.exports = express();
 const cors = require('cors');
+const https = require('https');
+const fs = require('fs');
 let bodyParser = require("body-parser");
 const fileUpload = require('express-fileupload');
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
+let key = fs.readFileSync(__dirname + '/selfsigned.key');
+let cert = fs.readFileSync(__dirname + '/selfsigned.crt');
+let options = {
+  key: key,
+  cert: cert
+};
+
 let apiKeys = ['tochangeonaws'];
 
 function error(status, msg) {
@@ -22,7 +30,7 @@ app.use('/api', function(req, res, next){
   if (apiKeys.indexOf(key) === -1) return next(error(401, 'invalid api key'))
   req.key = key;
   next();
-});
+})
 app.use(cors());
 app.use(
   fileUpload({
@@ -180,6 +188,8 @@ app.post("/api/wowplayers/", async (req, res, next) => {
     });
 })
 
+let server = https.createServer(options, app);
+
 app.use(express.static('uploads'));
 
 app.use(function(err, req, res, next){
@@ -192,9 +202,9 @@ app.use(function(req, res){
   res.send({ error: "Sorry, can't find that" })
 });
 
-const port = process.env.PORT || 80;
+const port = process.env.PORT || 443;
 
 if (!module.parent) {
-  app.listen(port);
+  server.listen(port);
   console.log('Express started on port 80');
 }
