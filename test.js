@@ -9,8 +9,8 @@ let bodyParser = require("body-parser");
 const fileUpload = require('express-fileupload');
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
-let key = fs.readFileSync(__dirname + '/selfsigned.key');
-let cert = fs.readFileSync(__dirname + '/selfsigned.crt');
+let key = fs.readFileSync(__dirname + '/etc/letsencrypt/live/parkergagliano.com/privkey.pem');
+let cert = fs.readFileSync(__dirname + '/etc/letsencypt/live/parkergagliano.com/fullchain.pem');
 let options = {
   key: key,
   cert: cert
