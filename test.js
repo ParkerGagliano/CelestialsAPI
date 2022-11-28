@@ -3,19 +3,13 @@ let db = require("./database.js")
 let express = require('express');
 let app = module.exports = express();
 const cors = require('cors');
-const https = require('https');
 const fs = require('fs');
 let bodyParser = require("body-parser");
 const fileUpload = require('express-fileupload');
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
-let key = fs.readFileSync(__dirname + '/etc/letsencrypt/live/parkergagliano.com/privkey.pem');
-let cert = fs.readFileSync(__dirname + '/etc/letsencypt/live/parkergagliano.com/fullchain.pem');
-let options = {
-  key: key,
-  cert: cert
-};
 
+app.use(cors());
 let apiKeys = ['tochangeonaws'];
 
 function error(status, msg) {
@@ -31,7 +25,7 @@ app.use('/api', function(req, res, next){
   req.key = key;
   next();
 })
-app.use(cors());
+
 app.use(
   fileUpload({
       limits: {
@@ -202,9 +196,9 @@ app.use(function(req, res){
   res.send({ error: "Sorry, can't find that" })
 });
 
-const port = process.env.PORT || 443;
+const port = process.env.PORT || 3000;
 
 if (!module.parent) {
-  server.listen(port);
+  app.listen(port);
   console.log('Express started on port 80');
 }
