@@ -1,13 +1,57 @@
 'use strict'
-let db = require("./database.js")
+//let db = require("./database.js")
 let express = require('express');
 let app = module.exports = express();
 const cors = require('cors');
 const fs = require('fs');
-let bodyParser = require("body-parser");
+
+
+const Knex = require('knex');
+const knexConfig = require('./knexfile');
+
+const { Model } = require('objection');
+const { wowplayers } = require('./models/wowplayers');
+
+
+const knex = Knex(knexConfig.development);
+// Bind all Models to the knex instance. You only
+// need to do this once before you use any of
+// your model classes.
+Model.knex(knex);
+
+
+async function createSchema() {
+  if (await knex.schema.hasTable('wowplayers')) {
+    return;
+  }
+
+  // Create database schema. You should use knex migration files
+  // to do this. We create it here for simplicity.
+  await knex.schema.createTable('wowplayers', table => {
+    table.increments('id').primary();
+    table.string('name');
+    table.string('tagline');
+    table.string('rank');
+    table.string('twitter');
+    table.string('youtube');
+    table.string('twitch');
+    table.string('tiktok');
+  });
+
+  const kyle = await wowplayers.query().insertGraph({
+    name: 'Kyle',
+  });
+}
+
+createSchema()
+
 const fileUpload = require('express-fileupload');
+
+let bodyParser = require("body-parser");
+
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
+
 
 app.use(cors());
 let apiKeys = ['tochangeonaws'];
@@ -34,9 +78,70 @@ app.use(
       abortOnLimit: true,
   })
 );
-app.get('/', (req, res) => {
-  res.send('Hello World!');
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+app.get('/', async (req, res) => {
+  let joe = await wowplayers.query().findById(1);
+  res.send(joe);
 });
+
+
+app.post("/", async (req, res) => {
+  let data = {
+    name: req.body.name,
+    tagline: req.body.tagline,
+    rank: req.body.rank,
+    twitter : req.body.twitter,
+    youtube : req.body.youtube,
+    twitch : req.body.twitch,
+    tiktok : req.body.tiktok
+
+}
+  let andy = await wowplayers.query().insertGraph({
+    name: data.name,
+    tagline: data.tagline,
+  });
+})
 
 
 app.post('/api/upload-avatar/', async (req, res) => {
@@ -182,7 +287,6 @@ app.post("/api/wowplayers/", async (req, res, next) => {
     });
 })
 
-let server = https.createServer(options, app);
 
 app.use(express.static('uploads'));
 
@@ -196,7 +300,10 @@ app.use(function(req, res){
   res.send({ error: "Sorry, can't find that" })
 });
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 1000;
+
+
+
 
 if (!module.parent) {
   app.listen(port);
