@@ -4,12 +4,12 @@ let express = require("express");
 let app = (module.exports = express());
 const cors = require("cors");
 const fs = require("fs");
-
 const Knex = require("knex");
 const knexConfig = require("./knexfile");
 
-const { Model } = require("objection");
+const { Model, ConstraintViolationError } = require("objection");
 const { wowplayers } = require("./models/wowplayers");
+const { streamers } = require("./models/streamers");
 
 const knex = Knex(knexConfig.development);
 // Bind all Models to the knex instance. You only
@@ -26,17 +26,22 @@ async function createSchema() {
   // to do this. We create it here for simplicity.
   await knex.schema.createTable("wowplayers", (table) => {
     table.increments("id").primary();
-    table.string("name");
+    table.string("name").unique();
     table.string("tagline");
     table.string("rank");
     table.string("twitter");
     table.string("youtube");
     table.string("twitch");
     table.string("tiktok");
+    table.string("imageextention");
   });
-
+  await knex.schema.createTable("streamers", (table) => {
+    table.increments("id").primary();
+    table.string("name").unique();
+  });
   const kyle = await wowplayers.query().insertGraph({
     name: "Kyle",
+    imageextention: 'png'
   });
 }
 
@@ -75,51 +80,27 @@ app.use(
   })
 );
 
-app.get("/", async (req, res) => {
-  let joe = await wowplayers.query().orderBy('rank', 'name');
-  res.send(joe);
+app.get("/wowplayers", async (req, res) => {
+  let data = await wowplayers.query().orderBy('rank', 'name');
+  res.send(data);
   
 })
 
-app.post("/", async (req, res) => {
-  let andy = await wowplayers.query().insertGraph({
-    name: req.body.name,
-    tagline: req.body.tagline,
-    rank: req.body.rank,
-    twitter: req.body.twitter,
-    youtube: req.body.youtube,
-    twitch: req.body.twitch,
-    tiktok: req.body.tiktok,
-  });
-  console.log(req.body.avatar)
-  
-  if (!req.files) {
-    res.send({
-      status: false,
-      message: "No file uploaded",
-    });
-  } else {
-    //Use the name of the input field (i.e. "avatar") to retrieve the uploaded file
+app.post("/wowplayers", async (req, res) => {
+  try {
     let avatar = req.files.avatar;
     let extension =  (avatar.name.split(".").pop()).toLowerCase();
-    //Use the mv() method to place the file in the upload directory (i.e. "uploads")
-    avatar.mv("./uploads/" + req.body.name + "." + extension);
-  }
-});
-
-app.delete("/delete", async (req, res) => {
-  console.log("dnasklo");
-  let data = {
-    name: req.body.name,
-  };
-  let del = await wowplayers.query().delete().where("name", data.name);
-  if (del > 0) {
-    res.send("This person has been deleted");
-  }
-});
-
-app.post("/api/upload-avatar/", async (req, res) => {
-  try {
+    let andy = await wowplayers.query().insertGraph({
+      name: req.body.name,
+      tagline: req.body.tagline,
+      rank: req.body.rank,
+      twitter: req.body.twitter,
+      youtube: req.body.youtube,
+      twitch: req.body.twitch,
+      tiktok: req.body.tiktok,
+      imageextention: extension
+    });
+    
     if (!req.files) {
       res.send({
         status: false,
@@ -127,160 +108,112 @@ app.post("/api/upload-avatar/", async (req, res) => {
       });
     } else {
       //Use the name of the input field (i.e. "avatar") to retrieve the uploaded file
-      let avatar = req.files.avatar;
       //Use the mv() method to place the file in the upload directory (i.e. "uploads")
-      avatar.mv("./uploads/" + avatar.name);
-      //send response
-      res.send({
-        status: true,
-        message: "File is uploaded",
-        data: {
-          name: avatar.name,
-          mimetype: avatar.mimetype,
-          size: avatar.size,
-        },
+      avatar.mv("./uploads/" + req.body.name + "." + extension);
+    }
+    res.send({
+      status: true,
+      message: "Player and photo uploaded",
+    });
+  }  
+  catch (err) {
+    if (err instanceof ConstraintViolationError) {
+      res.status(409).send({
+        message: "User already exists"
+  })
+  }
+    else if (err instanceof TypeError) {
+        res.status(409).send({
+          message: "No file uploaded"})
+    }
+    else {
+      res.status(500).send({
+        message: "Server error"
       });
     }
-  } catch (err) {
-    res.status(500).send(err);
+      
+  }
+
+});
+  
+
+app.patch("/update", async (req, res) => {
+  let data = {
+    name: req.body.name,
+    tagline: req.body.tagline,
+    rank: req.body.rank,
+    twitter: req.body.twitter,
+    youtube: req.body.youtube,
+    twitch: req.body.twitch,
+    tiktok: req.body.tiktok,
+  };
+  let update = await wowplayers.query().patch(data).where("name", data.name);
+  if (update > 0) {
+    res.send("This person has been updated");
+  }
+  else {
+    res.send("This person does not exist");
   }
 });
 
-app.delete("/api/wowplayers/", async (req, res, next) => {
-  console.log(req.body.name);
-  db.run(
-    "DELETE FROM wowplayers WHERE name = ?",
-    [req.body.name],
-    function (err, result) {
-      if (err) {
-        res.status(400).json({ error: res.message });
-        return;
-      }
-      res.json({ message: "deleted", changes: this.changes });
-    }
-  );
+
+app.delete("/wowplayers", async (req, res) => {
+  let data = {
+    name: req.body.name,
+  };
+  let del = await wowplayers.query().delete().where("name", data.name);
+  if (del > 0) {
+    res.send("This person has been deleted");
+  }
+  else {
+    res.send("This person does not exist");
+  }
 });
 
-app.get("/wowplayers", async (req, res, next) => {
-  let sql = "select * from wowplayers order by rank,name";
-  let params = [];
-  console.log("test");
-  db.all(sql, params, (err, rows) => {
-    if (err) {
-      res.status(400).json({ error: err.message });
-      return;
+app.post("/streamers", async (req, res) => {
+  try {
+    let andy = await wowplayers.query().insertGraph({ name: req.body.name });
+    res.send({
+      message: "Streamer added"})
     }
-    res.json({
-      message: "success",
-      data: rows,
+  catch (err) {
+    if (err instanceof ConstraintViolationError) {
+      res.status(409).send({
+        message: "Streamer already exists"
+  })
+  }
+    else {
+      res.status(500).send({
+        message: "Server error"
+      });
+    }
+      
+  }
+
+
+
+app.delete("/streamers", async (req, res) => {
+  try {
+    let del = await streamers.query().delete().where("name", res.body.name);
+    res.send({
+      message: "Streamer deleted"})
+    }
+  catch (err) {
+    res.status(403).send({
+      message: "Name not found"
     });
-  });
+  }
+      
+  }
 });
 
 //controller does validation, routing, and error handling
 //controller shoudlnt run sql queries
 //look at migrations (DB)
 
-app.patch("/api/wowplayers", async (req, res, next) => {
-  console.log("joe");
-  console.log(req.body.name);
-  let data = {
-    name: req.body.name,
-    tagline: req.body.tagline,
-    rank: req.body.rank,
-    twitter: req.body.twitter,
-    youtube: req.body.youtube,
-    twitch: req.body.twitch,
-    tiktok: req.body.tiktok,
-  };
-  db.run(
-    `UPDATE wowplayers set 
-         tagline = COALESCE(?,tagline),
-         rank = COALESCE(?,rank), 
-         twitter = COALESCE(?,twitter), 
-         youtube = COALESCE(?,youtube), 
-         twitch = COALESCE(?,twitch), 
-         tiktok = COALESCE(?,tiktok) 
-         WHERE name = ?`,
-    [
-      data.tagline,
-      data.rank,
-      data.twitter,
-      data.youtube,
-      data.twitch,
-      data.tiktok,
-      data.name,
-    ],
-    function (err, result) {
-      console.log(err);
-      if (err) {
-        console.log(err);
-        res.status(400).json({ error: err.message });
-        return;
-      }
-      res.json({
-        message: "success",
-        data: data,
-        changes: this.changes,
-      });
-    }
-  );
-});
-
-app.post("/api/wowplayers/", async (req, res, next) => {
-  console.log("test");
-  let errors = [];
-  if (!req.body.name) {
-    errors.push("No name specified");
-  }
-  if (!req.body.tagline) {
-    errors.push("No tagline specified");
-  }
-  if (errors.length) {
-    res.status(400).json({ error: errors.join(",") });
-    return;
-  }
-
-  let data = {
-    name: req.body.name,
-    tagline: req.body.tagline,
-    rank: req.body.rank,
-    twitter: req.body.twitter,
-    youtube: req.body.youtube,
-    twitch: req.body.twitch,
-    tiktok: req.body.tiktok,
-  };
-  let sql =
-    "INSERT INTO wowplayers (name, tagline,rank, twitter,youtube,twitch,tiktok) VALUES (?,?,?,?,?,?,?)";
-  let params = [
-    data.name,
-    data.tagline,
-    data.rank,
-    data.twitter,
-    data.youtube,
-    data.twitch,
-    data.tiktok,
-  ];
-  db.run(sql, params, function (err, result) {
-    if (err) {
-      res.status(400).json({ error: err.message });
-      return;
-    }
-
-    res.json({
-      message: "success",
-      data: data,
-      id: this.lastID,
-    });
-  });
-});
 
 app.use(express.static("uploads"));
 
-app.use(function (err, req, res, next) {
-  res.status(err.status || 500);
-  res.send({ error: err.message });
-});
 
 app.use(function (req, res) {
   res.status(404);
