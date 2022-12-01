@@ -201,11 +201,13 @@ app.get("/streamers", async (req, res) => {
 
 
 app.delete("/streamers", async (req, res) => {
+  console.log(req.body.name)
   try {
-    let del = await Streamers.query().delete().where("name", res.body.name);
+    let del = await Streamers.query().delete().where("name", req.body.name);
     res.send({
       message: "Streamer deleted"})
   } catch (err) {
+    console.log(err)
     res.status(403).send({
       message: "Name not found"
     });
@@ -215,6 +217,7 @@ app.delete("/streamers", async (req, res) => {
 
 
 app.post("/streamers", async (req, res) => {
+  console.log(req.body.name)
   try {
     let andy = await Streamers.query().insertGraph({ name: req.body.name });
     res.send({
