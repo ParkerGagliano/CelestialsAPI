@@ -6,22 +6,18 @@ const cors = require("cors");
 const fs = require("fs");
 const Knex = require("knex");
 const knexConfig = require("./knexfile");
-
 const { Model, ConstraintViolationError } = require("objection");
-const { wowplayers } = require("./models/wowplayers");
-const { streamers } = require("./models/streamers");
-
+const { Wowplayers } = require("./models/wowplayers");
+const { Streamers } = require("./models/streamers");
 const knex = Knex(knexConfig.development);
 // Bind all Models to the knex instance. You only
 // need to do this once before you use any of
 // your model classes.
 Model.knex(knex);
-
 async function createSchema() {
   if (await knex.schema.hasTable("wowplayers")) {
     return;
   }
-
   // Create database schema. You should use knex migration files
   // to do this. We create it here for simplicity.
   await knex.schema.createTable("wowplayers", (table) => {
@@ -39,16 +35,14 @@ async function createSchema() {
     table.increments("id").primary();
     table.string("name").unique();
   });
-  const kyle = await wowplayers.query().insertGraph({
+  const kyle = await Wowplayers.query().insertGraph({
     name: "Kyle",
     imageextention: 'png'
   });
 }
-
 createSchema();
 
 const fileUpload = require("express-fileupload");
-
 let bodyParser = require("body-parser");
 
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -80,17 +74,21 @@ app.use(
   })
 );
 
+
+
+
 app.get("/wowplayers", async (req, res) => {
-  let data = await wowplayers.query().orderBy('rank', 'name');
+  let data = await Wowplayers.query().orderBy('rank', 'name');
   res.send(data);
   
-})
+});
+
 
 app.post("/wowplayers", async (req, res) => {
   try {
     let avatar = req.files.avatar;
     let extension =  (avatar.name.split(".").pop()).toLowerCase();
-    let andy = await wowplayers.query().insertGraph({
+    let andy = await Wowplayers.query().insertGraph({
       name: req.body.name,
       tagline: req.body.tagline,
       rank: req.body.rank,
@@ -131,13 +129,11 @@ app.post("/wowplayers", async (req, res) => {
         message: "Server error"
       });
     }
-      
   }
-
 });
   
 
-app.patch("/update", async (req, res) => {
+app.patch("/wowplayers", async (req, res) => {
   let data = {
     name: req.body.name,
     tagline: req.body.tagline,
@@ -147,7 +143,7 @@ app.patch("/update", async (req, res) => {
     twitch: req.body.twitch,
     tiktok: req.body.tiktok,
   };
-  let update = await wowplayers.query().patch(data).where("name", data.name);
+  let update = await Wowplayers.query().patch(data).where("name", data.name);
   if (update > 0) {
     res.send("This person has been updated");
   }
@@ -158,21 +154,69 @@ app.patch("/update", async (req, res) => {
 
 
 app.delete("/wowplayers", async (req, res) => {
-  let data = {
-    name: req.body.name,
-  };
-  let del = await wowplayers.query().delete().where("name", data.name);
-  if (del > 0) {
-    res.send("This person has been deleted");
+  try{
+    let data = {
+      name: req.body.name,
+    };
+    let extension = await Wowplayers.query().select('imageextention').where("name", data.name);
+    let del = await Wowplayers.query().delete().where("name", data.name);
+    fs.unlink(`./uploads/${req.body.name}.${extension[0].imageextention}`, (err) => {
+      if (err) {
+        console.error(err)
+        return
+      }
+    })
+    if (del > 0) {
+      res.send("This person and photo has been deleted");
+    }
+    else {
+      res.send("This person does not exist");
+    }
   }
-  else {
-    res.send("This person does not exist");
+  catch (err) {
+    console.log(err)
+    if (err instanceof TypeError) {
+      res.status(409).send({
+        message: "This person does not exist"})
+    }
+    else {
+    res.status(500).send({
+      message: "Server error"
+    });
+  }
   }
 });
 
+
+app.get("/streamers", async (req, res) => {
+  try {
+    let data = await Streamers.query();
+    res.send(data);
+  }
+  catch (err) {
+    console.log(err)
+    res.send(err);
+  }
+});
+
+
+app.delete("/streamers", async (req, res) => {
+  try {
+    let del = await Streamers.query().delete().where("name", res.body.name);
+    res.send({
+      message: "Streamer deleted"})
+  } catch (err) {
+    res.status(403).send({
+      message: "Name not found"
+    });
+  }
+      
+  });
+
+
 app.post("/streamers", async (req, res) => {
   try {
-    let andy = await wowplayers.query().insertGraph({ name: req.body.name });
+    let andy = await Streamers.query().insertGraph({ name: req.body.name });
     res.send({
       message: "Streamer added"})
     }
@@ -181,31 +225,17 @@ app.post("/streamers", async (req, res) => {
       res.status(409).send({
         message: "Streamer already exists"
   })
-  }
+    } 
     else {
       res.status(500).send({
         message: "Server error"
       });
     }
-      
-  }
+    }});
 
 
 
-app.delete("/streamers", async (req, res) => {
-  try {
-    let del = await streamers.query().delete().where("name", res.body.name);
-    res.send({
-      message: "Streamer deleted"})
-    }
-  catch (err) {
-    res.status(403).send({
-      message: "Name not found"
-    });
-  }
-      
-  }
-});
+
 
 //controller does validation, routing, and error handling
 //controller shoudlnt run sql queries
@@ -220,7 +250,7 @@ app.use(function (req, res) {
   res.send({ error: "Sorry, can't find that" });
 });
 
-const port = process.env.PORT || 1000;
+const port = process.env.PORT || 3000;
 
 if (!module.parent) {
   app.listen(port);

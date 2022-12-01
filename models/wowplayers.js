@@ -2,7 +2,7 @@
 
 const { Model } = require('objection');
 
-class wowplayers extends Model {
+class Wowplayers extends Model {
   // Table name is the only required property.
   static get tableName() {
     return 'wowplayers';
@@ -10,5 +10,5 @@ class wowplayers extends Model {
 }
 
 module.exports = {
-    wowplayers,
+  Wowplayers,
 };
