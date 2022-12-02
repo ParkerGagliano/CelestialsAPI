@@ -35,10 +35,6 @@ async function createSchema() {
     table.increments("id").primary();
     table.string("name").unique();
   });
-  const kyle = await Wowplayers.query().insertGraph({
-    name: "Kyle",
-    imageextention: 'png'
-  });
 }
 createSchema();
 
@@ -84,12 +80,12 @@ app.get("/wowplayers", async (req, res) => {
 });
 
 
-app.post("/wowplayers", async (req, res) => {
+app.post("/api/wowplayers", async (req, res) => {
   try {
     let avatar = req.files.avatar;
     let extension =  (avatar.name.split(".").pop()).toLowerCase();
     let andy = await Wowplayers.query().insertGraph({
-      name: req.body.name,
+      name: req.body.name.toLowerCase(),
       tagline: req.body.tagline,
       rank: req.body.rank,
       twitter: req.body.twitter,
@@ -107,7 +103,7 @@ app.post("/wowplayers", async (req, res) => {
     } else {
       //Use the name of the input field (i.e. "avatar") to retrieve the uploaded file
       //Use the mv() method to place the file in the upload directory (i.e. "uploads")
-      avatar.mv("./uploads/" + req.body.name + "." + extension);
+      avatar.mv("./uploads/" + (req.body.name).toLowerCase() + "." + extension);
     }
     res.send({
       status: true,
@@ -133,7 +129,7 @@ app.post("/wowplayers", async (req, res) => {
 });
   
 
-app.patch("/wowplayers", async (req, res) => {
+app.patch("/api/wowplayers", async (req, res) => {
   let data = {
     name: req.body.name,
     tagline: req.body.tagline,
@@ -143,7 +139,7 @@ app.patch("/wowplayers", async (req, res) => {
     twitch: req.body.twitch,
     tiktok: req.body.tiktok,
   };
-  let update = await Wowplayers.query().patch(data).where("name", data.name);
+  let update = await Wowplayers.query().patch(data).where("name", (data.name).toLowerCase());
   if (update > 0) {
     res.send("This person has been updated");
   }
@@ -153,16 +149,15 @@ app.patch("/wowplayers", async (req, res) => {
 });
 
 
-app.delete("/wowplayers", async (req, res) => {
+app.delete("/api/wowplayers", async (req, res) => {
   try{
     let data = {
       name: req.body.name,
     };
-    let extension = await Wowplayers.query().select('imageextention').where("name", data.name);
-    let del = await Wowplayers.query().delete().where("name", data.name);
+    let extension = await Wowplayers.query().select('imageextention').where("name", (data.name).toLowerCase());
+    let del = await Wowplayers.query().delete().where("name", (data.name).toLowerCase());
     fs.unlink(`./uploads/${req.body.name}.${extension[0].imageextention}`, (err) => {
       if (err) {
-        console.error(err)
         return
       }
     })
@@ -174,7 +169,7 @@ app.delete("/wowplayers", async (req, res) => {
     }
   }
   catch (err) {
-    console.log(err)
+
     if (err instanceof TypeError) {
       res.status(409).send({
         message: "This person does not exist"})
@@ -194,20 +189,19 @@ app.get("/streamers", async (req, res) => {
     res.send(data);
   }
   catch (err) {
-    console.log(err)
     res.send(err);
   }
 });
 
 
-app.delete("/streamers", async (req, res) => {
-  console.log(req.body.name)
+app.delete("/api/streamers", async (req, res) => {
+
   try {
-    let del = await Streamers.query().delete().where("name", req.body.name);
+    let del = await Streamers.query().delete().where("name", (req.body.name).toLowerCase());
     res.send({
       message: "Streamer deleted"})
   } catch (err) {
-    console.log(err)
+
     res.status(403).send({
       message: "Name not found"
     });
@@ -216,10 +210,9 @@ app.delete("/streamers", async (req, res) => {
   });
 
 
-app.post("/streamers", async (req, res) => {
-  console.log(req.body.name)
+app.post("/api/streamers", async (req, res) => {
   try {
-    let andy = await Streamers.query().insertGraph({ name: req.body.name });
+    let andy = await Streamers.query().insertGraph({ name: (req.body.name).toLowerCase() });
     res.send({
       message: "Streamer added"})
     }
