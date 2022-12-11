@@ -3,19 +3,18 @@
 let express = require("express");
 let app = (module.exports = express());
 const cors = require("cors");
+const corsOpts = {
+  origin: "*",
+  methods: ["GET", "POST", "PATCH", "DELETE"],
+}
+app.use(cors(corsOpts));
 const Knex = require("knex");
 const knexConfig = require("./knexfile");
 const { Model, ConstraintViolationError } = require("objection");
 const { Wowplayers } = require("./models/wowplayers");
 const { Streamers } = require("./models/streamers");
 const routes = require("./routes");
-app.use(
-  cors({
-    origin: "celestials.gg/playermanager",// token in cookie
-    methods: "GET,PUT,POST,OPTIONS, DELETE, PATCH",
-    // allowedHeaders: 'Accept, Content-Type, Authorization'
-  })
-);
+
 const knex = Knex(knexConfig.development);
 // Bind all Models to the knex instance. You only
 // need to do this once before you use any of
