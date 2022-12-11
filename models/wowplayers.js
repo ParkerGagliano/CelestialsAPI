@@ -1,11 +1,11 @@
-'use strict';
+"use strict";
 
-const { Model } = require('objection');
+const { Model } = require("objection");
 
 class Wowplayers extends Model {
   // Table name is the only required property.
   static get tableName() {
-    return 'wowplayers';
+    return "wowplayers";
   }
 }
 
