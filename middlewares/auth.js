@@ -5,6 +5,7 @@ function error(status, msg) {
 }
 
 function apiKeyCheck(req, res, next) {
+  let apiKeys = ['testing']
   let key = req.query["api-key"];
   if (!key) return next(error(400, "api key required"));
   if (apiKeys.indexOf(key) === -1) return next(error(401, "invalid api key"));

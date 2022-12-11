@@ -48,6 +48,14 @@ let bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 let apiKeys = ["tochangeonaws"];
+app.use(
+  fileUpload({
+    limits: {
+      fileSize: 10000000, // Around 10MB
+    },
+    abortOnLimit: true,
+  })
+);
 
 app.use(routes);
 

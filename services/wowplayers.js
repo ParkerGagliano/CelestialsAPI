@@ -9,15 +9,10 @@ module.exports = {
 
     async addPlayer(data) {
         try {
-            let newPlayer = await Wowplayers.query().insertGraph({data});
+            let newPlayer = await Wowplayers.query().insertGraph(data);
             return newPlayer
         } catch (err) {
-            if (err instanceof ConstraintViolationError) {
-                throw new Error("User already exists")
-                } else {
-                    throw new Error("Server error")
-                }
-        
+            throw new Error(err)
         }
     },
     async editPlayer(req, res) {

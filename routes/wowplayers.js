@@ -13,35 +13,40 @@ router.get("/", async (req, res) => {
 router.use(auth)
 
 router.post("/", async (req, res) => {
-    let avatar = req.files.avatar;
-    let data = {name: req.body.name.toLowerCase(),
+    try {
+        let avatar = req.files.avatar;
+    }
+    catch (err) {
+        res.status(500).send({
+            message: "no photo",
+        });
+    }
+    try {
+        let avatar = req.files.avatar
+        let extension =  (avatar.name.split(".").pop()).toLowerCase();
+        let data = {name: req.body.name.toLowerCase(),
         tagline: req.body.tagline,
         rank: req.body.rank,
         twitter: req.body.twitter,
         youtube: req.body.youtube,
         twitch: req.body.twitch,
         tiktok: req.body.tiktok,
-        imageextention: avatar.name.split(".").pop().toLowerCase(),
-        avatar: avatar}
-    if (!req.files) {
+        imageextention: extension}
+        await WowplayerService.addPlayer(data);
+        avatar.mv("./uploads/" + data.name + "." + extension);
         res.send({
-            status: false,
-            message: "No file uploaded",
+            message: "Player and photo added",
         });
-        } else {
-            try {
-                WowplayerService.addPlayer(data);
-                avatar.mv("./uploads/" + data.name + "." + data.extension);
-            }
-            catch (err) {
-                res.status(500).send({
-                    message: err,
-                });
-            }
+    } catch (err) {
+        console.log(err)
+        res.status(403).send({
+            message: "Name already exists",
+        });
+    }
+
 
     
-        }
-
+        
 });
 
 router.patch("/", async (req, res) => {
