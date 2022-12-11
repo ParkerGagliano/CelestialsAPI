@@ -5,7 +5,15 @@ const WowplayerService = require("../services/wowplayers");
 
 
 router.get("/", async (req, res) => {
-    WowplayerService.getAll(req, res);
+    try {
+        let data = await WowplayerService.getAll();
+        res.send(data)
+    }
+    catch (err) {
+        res.status(500).send({
+            message: err,
+        });
+    }
   });
 
 
@@ -17,13 +25,15 @@ router.post("/", async (req, res) => {
         let avatar = req.files.avatar;
     }
     catch (err) {
-        res.status(500).send({
-            message: "no photo",
-        });
+        res.status(500).send(
+            "You must have upload a photo with a player"
+        );
+        return
     }
     try {
         let avatar = req.files.avatar
         let extension =  (avatar.name.split(".").pop()).toLowerCase();
+        console.log(extension)
         let data = {name: req.body.name.toLowerCase(),
         tagline: req.body.tagline,
         rank: req.body.rank,
@@ -32,15 +42,14 @@ router.post("/", async (req, res) => {
         twitch: req.body.twitch,
         tiktok: req.body.tiktok,
         imageextention: extension}
-        await WowplayerService.addPlayer(data);
+        let response = await WowplayerService.addPlayer(data);
         avatar.mv("./uploads/" + data.name + "." + extension);
-        res.send({
-            message: "Player and photo added",
-        });
+        res.send("Player and photo uploaded"
+            
+        );
     } catch (err) {
-        console.log(err)
         res.status(403).send({
-            message: "Name already exists",
+            message: err.message,
         });
     }
 
@@ -50,13 +59,39 @@ router.post("/", async (req, res) => {
 });
 
 router.patch("/", async (req, res) => {
-    WowplayerService.editPlayer(req);
-
+    try {
+        let data = {name: req.body.name.toLowerCase(),
+            tagline: req.body.tagline,
+            rank: req.body.rank,
+            twitter: req.body.twitter,
+            youtube: req.body.youtube,
+            twitch: req.body.twitch,
+            tiktok: req.body.tiktok,
+            }
+            let returndata = await WowplayerService.editPlayer(data);
+            res.send(returndata);
+    }
+    catch (err) {
+        res.status(500).send({
+            message: err.message,
+        });
+    }
+    
 });
 
 router.delete("/", async (req, res) => {
-    WowplayerService.deletePlayer(req);
-
+    try {
+        let data = {name: req.body.name.toLowerCase()}
+        let response = await WowplayerService.deletePlayer(data);
+        res.send({
+            message: response,
+        });
+    }   
+    catch (err) {
+        res.status(500).send({
+            message: err.message,
+        });
+    }
 });
 
 module.exports = router;

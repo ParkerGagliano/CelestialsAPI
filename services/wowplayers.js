@@ -1,10 +1,11 @@
 const { Wowplayers } = require("../models/wowplayers");
+const fs = require('fs');
+const {ConstraintViolationError } = require("objection");
 
 module.exports = {
-    async getAll(req, res) {
+    async getAll() {
         let data = await Wowplayers.query().orderBy("rank", "name");
-        res.send(data);
-
+        return data
     },
 
     async addPlayer(data) {
@@ -12,66 +13,63 @@ module.exports = {
             let newPlayer = await Wowplayers.query().insertGraph(data);
             return newPlayer
         } catch (err) {
-            throw new Error(err)
+            if (err instanceof ConstraintViolationError) {
+                throw new Error("This player already exists")
+            }
+            else {
+                throw new Error(err)
+            }
+ 
         }
+
     },
-    async editPlayer(req, res) {
-        let data = {
-            name: req.body.name,
-            tagline: req.body.tagline,
-            rank: req.body.rank,
-            twitter: req.body.twitter,
-            youtube: req.body.youtube,
-            twitch: req.body.twitch,
-            tiktok: req.body.tiktok,
-        };
+
+
+    async editPlayer(data) {
         let update = await Wowplayers.query()
             .patch(data)
             .where("name", data.name.toLowerCase());
         if (update > 0) {
-            res.send("This person has been updated");
+            return ("This person has been updated");
         } else {
-            res.send("This person does not exist");
+            return ("This person does not exist");
         }
     },
 
-    async deletePlayer(req, res) {
+    
+
+
+    async deletePlayer(data) {
+        let extension = await Wowplayers.query().where("name", data.name);
+            console.log(extension)
         try {
-            let data = {
-            name: req.body.name,
-            };
-            let extension = await Wowplayers.query()
-            .select("imageextention")
-            .where("name", data.name.toLowerCase());
             let del = await Wowplayers.query()
-            .delete()
-            .where("name", data.name.toLowerCase());
+                .delete()
+                .where("name", data.name);
+        }
+        catch (err) {
+            throw new Error("Name not found")
+        }
+        
+        try {
             fs.unlink(
-            `./uploads/${req.body.name}.${extension[0].imageextention}`,
+            `./uploads/${data.name}.${extension[0].imageextention}`,
             (err) => {
                 if (err) {
-                return;
+                return err;
                 }
             }
             );
-            if (del > 0) {
-            res.send("This person and photo has been deleted");
-            } else {
-            res.send("This person does not exist");
-            }
+            return ("Player and photo deleted")
         } catch (err) {
-            if (err instanceof TypeError) {
-            res.status(409).send({
-                message: "This person does not exist",
-            });
-            } else {
-            res.status(500).send({
-                message: "Server error",
-            });
-            }
+            console.log(err)
+            throw new Error(err)
         }
+
     }
-}
+
+    }
+
 
 
 
