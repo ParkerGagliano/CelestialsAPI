@@ -13,7 +13,34 @@ router.get("/", async (req, res) => {
 router.use(auth)
 
 router.post("/", async (req, res) => {
-    WowplayerService.addPlayer(req);
+    let avatar = req.files.avatar;
+    let data = {name: req.body.name.toLowerCase(),
+        tagline: req.body.tagline,
+        rank: req.body.rank,
+        twitter: req.body.twitter,
+        youtube: req.body.youtube,
+        twitch: req.body.twitch,
+        tiktok: req.body.tiktok,
+        imageextention: avatar.name.split(".").pop().toLowerCase(),
+        avatar: avatar}
+    if (!req.files) {
+        res.send({
+            status: false,
+            message: "No file uploaded",
+        });
+        } else {
+            try {
+                WowplayerService.addPlayer(data);
+                avatar.mv("./uploads/" + data.name + "." + data.extension);
+            }
+            catch (err) {
+                res.status(500).send({
+                    message: err,
+                });
+            }
+
+    
+        }
 
 });
 

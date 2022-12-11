@@ -7,49 +7,17 @@ module.exports = {
 
     },
 
-    async addPlayer(req, res) {
+    async addPlayer(data) {
         try {
-            let avatar = req.files.avatar;
-            let extension = avatar.name.split(".").pop().toLowerCase();
-            let andy = await Wowplayers.query().insertGraph({
-            name: req.body.name.toLowerCase(),
-            tagline: req.body.tagline,
-            rank: req.body.rank,
-            twitter: req.body.twitter,
-            youtube: req.body.youtube,
-            twitch: req.body.twitch,
-            tiktok: req.body.tiktok,
-            imageextention: extension,
-            });
-        
-            if (!req.files) {
-            res.send({
-                status: false,
-                message: "No file uploaded",
-            });
-            } else {
-            //Use the name of the input field (i.e. "avatar") to retrieve the uploaded file
-            //Use the mv() method to place the file in the upload directory (i.e. "uploads")
-            avatar.mv("./uploads/" + req.body.name.toLowerCase() + "." + extension);
-            }
-            res.send({
-            status: true,
-            message: "Player and photo uploaded",
-            });
+            let newPlayer = await Wowplayers.query().insertGraph({data});
+            return newPlayer
         } catch (err) {
             if (err instanceof ConstraintViolationError) {
-            res.status(409).send({
-                message: "User already exists",
-            });
-            } else if (err instanceof TypeError) {
-            res.status(409).send({
-                message: "No file uploaded",
-            });
-            } else {
-            res.status(500).send({
-                message: "Server error",
-            });
-            }
+                throw new Error("User already exists")
+                } else {
+                    throw new Error("Server error")
+                }
+        
         }
     },
     async editPlayer(req, res) {
